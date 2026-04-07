@@ -8,7 +8,9 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var showAR = false
+    @State private var studentName: String = ""
+    @State private var studentGrade: String = ""
+    @State private var showError: Bool = false
     
     var body: some View {
         NavigationStack {
@@ -39,11 +41,12 @@ struct ContentView: View {
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.gray)
                         
-                        TextField("Enter student name", text: .constant(""))
+                        TextField("Enter student name", text: $studentName)
                             .padding()
                             .background(Color.white.opacity(0.1))
                             .cornerRadius(12)
                             .foregroundColor(.white)
+                            .autocorrectionDisabled()
                     }
                     .padding(.horizontal, 32)
                     
@@ -53,33 +56,51 @@ struct ContentView: View {
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.gray)
                         
-                        TextField("Enter grade (e.g. Grade 3)", text: .constant(""))
+                        TextField("Enter grade (e.g. Grade 3)", text: $studentGrade)
                             .padding()
                             .background(Color.white.opacity(0.1))
                             .cornerRadius(12)
                             .foregroundColor(.white)
+                            .autocorrectionDisabled()
                     }
                     .padding(.horizontal, 32)
+                    
+                    // Error message
+                    if showError {
+                        Text("Please enter student name and grade.")
+                            .font(.system(size: 13))
+                            .foregroundColor(.red)
+                    }
                     
                     Spacer()
                     
                     // Start Button
-                    NavigationLink(destination: Text("AR View Coming Soon")) {
+                    NavigationLink(destination: ARAssessmentView(
+                        studentName: studentName,
+                        studentGrade: studentGrade
+                    )) {
                         Text("Start Assessment")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(.black)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.white)
+                            .background(studentName.isEmpty || studentGrade.isEmpty ? Color.gray : Color.white)
                             .cornerRadius(14)
                     }
+                    .disabled(studentName.isEmpty || studentGrade.isEmpty)
                     .padding(.horizontal, 32)
+                    .simultaneousGesture(TapGesture().onEnded {
+                        if studentName.isEmpty || studentGrade.isEmpty {
+                            showError = true
+                        }
+                    })
                     
                     Spacer()
                         .frame(height: 20)
                 }
             }
         }
+        .preferredColorScheme(.dark)
     }
 }
 
