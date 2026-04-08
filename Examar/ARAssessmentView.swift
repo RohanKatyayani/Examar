@@ -130,6 +130,7 @@ class ARViewController: UIViewController, ARSCNViewDelegate {
     var portalPlaced: Bool = false
     var assessmentManager: AssessmentManager?
     var onAssessmentComplete: (() -> Void)?
+    var onPortalPlaced: (() -> Void)?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -183,6 +184,7 @@ class ARViewController: UIViewController, ARSCNViewDelegate {
         )
         
         sceneView.scene.rootNode.addChildNode(portal)
+        onPortalPlaced?()
         
         // Start assessment after portal is placed
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -201,6 +203,7 @@ struct ARViewContainer: UIViewControllerRepresentable {
     var studentName: String
     var studentGrade: String
     @ObservedObject var manager: AssessmentManager
+    @Binding var portalPlaced: Bool
     var onComplete: () -> Void
     
     func makeUIViewController(context: Context) -> ARViewController {
@@ -209,6 +212,11 @@ struct ARViewContainer: UIViewControllerRepresentable {
         controller.studentGrade = studentGrade
         controller.assessmentManager = manager
         controller.onAssessmentComplete = onComplete
+        controller.onPortalPlaced = {
+            DispatchQueue.main.async {
+                portalPlaced = true
+            }
+        }
         return controller
     }
     
@@ -225,6 +233,7 @@ struct ARAssessmentView: View {
     
     @StateObject private var assessmentManager = AssessmentManager()
     @State private var navigateToResults = false
+    @State private var portalPlaced = false
     
     var body: some View {
         ZStack {
@@ -233,6 +242,7 @@ struct ARAssessmentView: View {
                 studentName: studentName,
                 studentGrade: studentGrade,
                 manager: assessmentManager,
+                portalPlaced: $portalPlaced,
                 onComplete: {
                     navigateToResults = true
                 }
@@ -251,10 +261,11 @@ struct ARAssessmentView: View {
                             .foregroundColor(.white.opacity(0.8))
                     }
                     Spacer()
-                    // Budget display
-                    Text("£\(String(format: "%.0f", assessmentManager.currentBudget))")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.yellow)
+                    if portalPlaced {
+                        Text("£\(String(format: "%.0f", assessmentManager.currentBudget))")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.yellow)
+                    }
                     Spacer()
                     Text("Examar")
                         .font(.system(size: 16, weight: .bold))
@@ -265,15 +276,29 @@ struct ARAssessmentView: View {
                 
                 Spacer()
                 
-                // Assessment overlay
-                AssessmentOverlayView(
-                    manager: assessmentManager,
-                    onComplete: {
-                        navigateToResults = true
-                    }
-                )
-                .padding(.horizontal, 20)
-                .padding(.bottom, 30)
+                // Show tap instruction BEFORE portal placed
+                if !portalPlaced {
+                    Text("Point your camera at a flat surface and tap to enter the supermarket")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                        .background(Color.black.opacity(0.75))
+                        .cornerRadius(12)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 30)
+                    
+                // Show assessment overlay AFTER portal placed
+                } else {
+                    AssessmentOverlayView(
+                        manager: assessmentManager,
+                        onComplete: {
+                            navigateToResults = true
+                        }
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 30)
+                }
             }
             
             // Navigate to results

@@ -39,7 +39,7 @@ struct AssessmentOverlayView: View {
     // MARK: - Start View
     var startView: some View {
         VStack(spacing: 16) {
-            Text("Welcome, \(manager.studentName)!")
+            Text("Welcome \(manager.studentName)!")
                 .font(.system(size: 20, weight: .bold))
                 .foregroundColor(.white)
 
