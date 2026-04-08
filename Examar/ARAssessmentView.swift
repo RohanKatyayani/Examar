@@ -7,8 +7,8 @@
 
 import SwiftUI
 import ARKit
-import RealityKit
 import SceneKit
+import Combine
 
 // MARK: - Portal Manager
 class PortalManager {
@@ -16,7 +16,6 @@ class PortalManager {
     static func makePortal() -> SCNNode {
         let portalNode = SCNNode()
         
-        // Portal dimensions
         let wallWidth: CGFloat = 3.0
         let wallHeight: CGFloat = 3.0
         let wallDepth: CGFloat = 0.05
@@ -54,7 +53,7 @@ class PortalManager {
         rightWall.eulerAngles.y = Float.pi / 2
         portalNode.addChildNode(rightWall)
         
-        // Floor
+        // Floor - white tiles
         let floor = makeWallNode(
             width: wallWidth,
             height: roomDepth,
@@ -66,48 +65,26 @@ class PortalManager {
         floor.eulerAngles.x = Float.pi / 2
         portalNode.addChildNode(floor)
         
-        // Ceiling
+        // Ceiling - white
         let ceiling = makeWallNode(
             width: wallWidth,
             height: roomDepth,
             depth: wallDepth,
             imageName: nil,
-            color: UIColor.lightGray,
+            color: UIColor.white,
             position: SCNVector3(0, wallHeight, -roomDepth/4)
         )
         ceiling.eulerAngles.x = Float.pi / 2
         portalNode.addChildNode(ceiling)
         
-        // Door frame - left side
-        let doorLeft = makeWallNode(
-            width: 0.3,
-            height: wallHeight,
-            depth: wallDepth,
-            imageName: nil,
-            color: UIColor.white,
-            position: SCNVector3(-0.65, wallHeight/2, 0)
-        )
-        portalNode.addChildNode(doorLeft)
-        
-        // Door frame - right side
-        let doorRight = makeWallNode(
-            width: 0.3,
-            height: wallHeight,
-            depth: wallDepth,
-            imageName: nil,
-            color: UIColor.white,
-            position: SCNVector3(0.65, wallHeight/2, 0)
-        )
-        portalNode.addChildNode(doorRight)
-        
-        // Door frame - top
+        // Single clean door frame - top only
         let doorTop = makeWallNode(
             width: wallWidth,
-            height: 0.3,
+            height: 0.2,
             depth: wallDepth,
             imageName: nil,
             color: UIColor.white,
-            position: SCNVector3(0, wallHeight - 0.15, 0)
+            position: SCNVector3(0, wallHeight - 0.1, 0)
         )
         portalNode.addChildNode(doorTop)
         
@@ -145,12 +122,14 @@ class PortalManager {
     }
 }
 
-// MARK: - AR View Controller (UIKit Bridge)
+// MARK: - AR View Controller
 class ARViewController: UIViewController, ARSCNViewDelegate {
     var sceneView: ARSCNView!
     var studentName: String = ""
     var studentGrade: String = ""
     var portalPlaced: Bool = false
+    var assessmentManager: AssessmentManager?
+    var onAssessmentComplete: (() -> Void)?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -182,7 +161,6 @@ class ARViewController: UIViewController, ARSCNViewDelegate {
         guard !portalPlaced else { return }
         
         let location = recognizer.location(in: sceneView)
-        
         let results = sceneView.hitTest(
             location,
             types: [.existingPlaneUsingExtent]
@@ -197,7 +175,6 @@ class ARViewController: UIViewController, ARSCNViewDelegate {
         portalPlaced = true
         
         let portal = PortalManager.makePortal()
-        
         let matrix = hitResult.worldTransform
         portal.position = SCNVector3(
             matrix.columns.3.x,
@@ -206,6 +183,11 @@ class ARViewController: UIViewController, ARSCNViewDelegate {
         )
         
         sceneView.scene.rootNode.addChildNode(portal)
+        
+        // Start assessment after portal is placed
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.assessmentManager?.startAssessment()
+        }
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -218,11 +200,15 @@ class ARViewController: UIViewController, ARSCNViewDelegate {
 struct ARViewContainer: UIViewControllerRepresentable {
     var studentName: String
     var studentGrade: String
+    @ObservedObject var manager: AssessmentManager
+    var onComplete: () -> Void
     
     func makeUIViewController(context: Context) -> ARViewController {
         let controller = ARViewController()
         controller.studentName = studentName
         controller.studentGrade = studentGrade
+        controller.assessmentManager = manager
+        controller.onAssessmentComplete = onComplete
         return controller
     }
     
@@ -237,16 +223,24 @@ struct ARAssessmentView: View {
     var studentName: String
     var studentGrade: String
     
+    @StateObject private var assessmentManager = AssessmentManager()
+    @State private var navigateToResults = false
+    
     var body: some View {
         ZStack {
+            // AR View
             ARViewContainer(
                 studentName: studentName,
-                studentGrade: studentGrade
+                studentGrade: studentGrade,
+                manager: assessmentManager,
+                onComplete: {
+                    navigateToResults = true
+                }
             )
             .ignoresSafeArea()
             
+            // HUD
             VStack {
-                // Top HUD
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(studentName)
@@ -257,6 +251,11 @@ struct ARAssessmentView: View {
                             .foregroundColor(.white.opacity(0.8))
                     }
                     Spacer()
+                    // Budget display
+                    Text("£\(String(format: "%.0f", assessmentManager.currentBudget))")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.yellow)
+                    Spacer()
                     Text("Examar")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.white)
@@ -266,18 +265,31 @@ struct ARAssessmentView: View {
                 
                 Spacer()
                 
-                // Bottom instruction
-                Text("Tap on a flat surface to place the portal")
-                    .font(.system(size: 14))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .padding()
-                    .background(Color.black.opacity(0.5))
-                    .cornerRadius(12)
-                    .padding(.bottom, 30)
-                    .padding(.horizontal, 20)
+                // Assessment overlay
+                AssessmentOverlayView(
+                    manager: assessmentManager,
+                    onComplete: {
+                        navigateToResults = true
+                    }
+                )
+                .padding(.horizontal, 20)
+                .padding(.bottom, 30)
+            }
+            
+            // Navigate to results
+            NavigationLink(
+                destination: ResultView(
+                    manager: assessmentManager
+                ),
+                isActive: $navigateToResults
+            ) {
+                EmptyView()
             }
         }
         .navigationBarBackButtonHidden(false)
+        .onAppear {
+            assessmentManager.studentName = studentName
+            assessmentManager.studentGrade = studentGrade
+        }
     }
 }
