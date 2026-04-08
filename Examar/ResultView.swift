@@ -8,10 +8,18 @@
 import SwiftUI
 
 struct ResultView: View {
-    @ObservedObject var manager: AssessmentManager
+    let studentName: String
+    let studentGrade: String
+    let finalScore: Int
+    let performanceLabel: String
+    let milkAttempts: Int
+    let eggsAttempts: Int
+    let breadAttempts: Int
+    let remainingBudget: Double
+    
     @State private var teacherNotes: String = ""
     @State private var assessmentSaved: Bool = false
-    @Environment(\.dismiss) var dismiss
+    var onReset: () -> Void
 
     var body: some View {
         ZStack {
@@ -26,11 +34,11 @@ struct ResultView: View {
                             .font(.system(size: 28, weight: .bold))
                             .foregroundColor(.white)
 
-                        Text(manager.studentName)
+                        Text(studentName)
                             .font(.system(size: 18))
                             .foregroundColor(.gray)
 
-                        Text(manager.studentGrade)
+                        Text(studentGrade)
                             .font(.system(size: 15))
                             .foregroundColor(.gray)
                     }
@@ -43,13 +51,13 @@ struct ResultView: View {
                             .frame(width: 140, height: 140)
 
                         Circle()
-                            .trim(from: 0, to: CGFloat(manager.finalScore) / 100)
+                            .trim(from: 0, to: CGFloat(finalScore) / 100)
                             .stroke(scoreColor, lineWidth: 12)
                             .frame(width: 140, height: 140)
                             .rotationEffect(.degrees(-90))
 
                         VStack(spacing: 4) {
-                            Text("\(manager.finalScore)")
+                            Text("\(finalScore)")
                                 .font(.system(size: 42, weight: .bold))
                                 .foregroundColor(.white)
                             Text("/ 100")
@@ -59,7 +67,7 @@ struct ResultView: View {
                     }
 
                     // Performance label
-                    Text(manager.performanceLabel)
+                    Text(performanceLabel)
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(scoreColor)
                         .padding(.horizontal, 24)
@@ -72,19 +80,19 @@ struct ResultView: View {
                         resultRow(
                             item: "🥛 Milk",
                             price: "£2",
-                            attempts: manager.milkAttempts
+                            attempts: milkAttempts
                         )
                         Divider().background(Color.white.opacity(0.1))
                         resultRow(
                             item: "🥚 Eggs",
                             price: "£4",
-                            attempts: manager.eggsAttempts
+                            attempts: eggsAttempts
                         )
                         Divider().background(Color.white.opacity(0.1))
                         resultRow(
                             item: "🍞 Bread",
                             price: "£3",
-                            attempts: manager.breadAttempts
+                            attempts: breadAttempts
                         )
                         Divider().background(Color.white.opacity(0.1))
 
@@ -94,7 +102,7 @@ struct ResultView: View {
                                 .font(.system(size: 15))
                                 .foregroundColor(.white)
                             Spacer()
-                            Text("£\(String(format: "%.0f", manager.currentBudget))")
+                            Text("£\(String(format: "%.0f", remainingBudget))")
                                 .font(.system(size: 15, weight: .bold))
                                 .foregroundColor(.yellow)
                         }
@@ -150,8 +158,7 @@ struct ResultView: View {
 
                     // New assessment button
                     Button(action: {
-                        dismiss()
-                        dismiss()
+                        onReset()
                     }) {
                         Text("Start New Assessment")
                             .font(.system(size: 17, weight: .semibold))
@@ -181,7 +188,7 @@ struct ResultView: View {
                 .foregroundColor(.gray)
             Spacer()
             Text("\(attempts) \(attempts == 1 ? "attempt" : "attempts")")
-                .font(.system(size: 14))
+                .font(.system(size: 14, weight: .bold))
                 .foregroundColor(attempts == 1 ? .green : .orange)
         }
         .padding()
@@ -190,7 +197,7 @@ struct ResultView: View {
 
     // MARK: - Score colour
     var scoreColor: Color {
-        switch manager.finalScore {
+        switch finalScore {
         case 90...100: return .green
         case 75...89: return .yellow
         case 55...74: return .orange

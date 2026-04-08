@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import SceneKit
 
 // MARK: - Assessment Item
 struct AssessmentItem {
@@ -49,6 +50,9 @@ class AssessmentManager: ObservableObject {
     var milkAttempts: Int = 0
     var eggsAttempts: Int = 0
     var breadAttempts: Int = 0
+    // Section detection
+    @Published var facingSection: AssessmentStage = .notStarted
+    @Published var portalAnchorPosition: SCNVector3 = SCNVector3(0, 0, 0)
     
     // Items
     let items: [AssessmentStage: AssessmentItem] = [
@@ -161,4 +165,72 @@ class AssessmentManager: ObservableObject {
         default: return "Needs More Work"
         }
     }
+
+    // Detect which section student is facing
+    func updateFacingSection(
+        cameraTransform: SCNMatrix4,
+        portalPosition: SCNVector3
+    ) {
+        // Get camera position
+        let cameraPosition = SCNVector3(
+            cameraTransform.m41,
+            cameraTransform.m42,
+            cameraTransform.m43
+        )
+        
+        // Get camera forward direction
+        let cameraForward = SCNVector3(
+            -cameraTransform.m31,
+            -cameraTransform.m32,
+            -cameraTransform.m33
+        )
+        
+        // Vector from camera to portal
+        let toPortal = SCNVector3(
+            portalPosition.x - cameraPosition.x,
+            0,
+            portalPosition.z - cameraPosition.z
+        )
+        
+        // Normalize
+        let length = sqrt(
+            toPortal.x * toPortal.x + toPortal.z * toPortal.z
+        )
+        guard length > 0.01 else { return }
+        
+        let normalizedToPortal = SCNVector3(
+            toPortal.x / length,
+            0,
+            toPortal.z / length
+        )
+        
+        // Dot product to determine facing direction
+        let dot = cameraForward.x * normalizedToPortal.x +
+                  cameraForward.z * normalizedToPortal.z
+        
+        // Cross product to determine left/right
+        let cross = cameraForward.x * normalizedToPortal.z -
+                    cameraForward.z * normalizedToPortal.x
+        
+        // Only update if student is inside or close to portal
+        let distanceToPortal = length
+        guard distanceToPortal < 4.0 else {
+            facingSection = .notStarted
+            return
+        }
+        
+        if dot > 0.5 {
+            // Facing back wall - Milk
+            facingSection = .milk
+        } else if cross > 0.3 {
+            // Facing left wall - Eggs
+            facingSection = .eggs
+        } else if cross < -0.3 {
+            // Facing right wall - Bread
+            facingSection = .bread
+        } else {
+            facingSection = .notStarted
+        }
+    }
+    
 }

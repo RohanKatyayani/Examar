@@ -71,67 +71,92 @@ struct AssessmentOverlayView: View {
     // MARK: - Question View
     var questionView: some View {
         VStack(spacing: 14) {
-
-            // Section label
-            Text(manager.currentItem?.section ?? "")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.gray)
-
-            // Item and price
-            HStack {
-                Text(manager.currentItem?.name ?? "")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundColor(.white)
-                Spacer()
-                Text("£\(String(format: "%.0f", manager.currentItem?.price ?? 0))")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundColor(.yellow)
-            }
-
-            // Budget
-            Text("You have £\(String(format: "%.0f", manager.currentBudget)) left")
-                .font(.system(size: 15))
-                .foregroundColor(.white.opacity(0.8))
-
-            // Question
-            Text("How much will you have after buying \(manager.currentItem?.name ?? "")?")
-                .font(.system(size: 15))
-                .foregroundColor(.white)
-                .multilineTextAlignment(.center)
-
-            // Answer input
-            TextField("Enter amount (e.g. 8)", text: $manager.userAnswer)
-                .keyboardType(.decimalPad)
+            
+            // Check if student is facing correct section
+            let correctSection = manager.facingSection == manager.currentStage
+            
+            if !correctSection {
+                // Not facing the right section
+                VStack(spacing: 12) {
+                    Text("Go! 🏃")
+                        .font(.system(size: 32, weight: .bold))
+                        .foregroundColor(.white)
+                    
+                    Text("Find the \(manager.currentItem?.name ?? "") section")
+                        .font(.system(size: 16))
+                        .foregroundColor(.white.opacity(0.8))
+                        .multilineTextAlignment(.center)
+                }
                 .padding()
-                .background(Color.white.opacity(0.15))
-                .cornerRadius(12)
-                .foregroundColor(.white)
-                .multilineTextAlignment(.center)
-                .font(.system(size: 18, weight: .semibold))
-
-            // Wrong answer message
-            if manager.isAnswerWrong {
-                Text("That's not right — think again! 🤔")
-                    .font(.system(size: 13))
-                    .foregroundColor(.red)
-            }
-
-            // Submit button
-            Button(action: {
-                let _ = manager.checkAnswer()
-            }) {
-                Text("Submit Answer")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.black)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(14)
+                .background(Color.black.opacity(0.75))
+                .cornerRadius(16)
+                
+            } else {
+                // Facing correct section - show question
+                VStack(spacing: 14) {
+                    
+                    // Section label
+                    Text(manager.currentItem?.section ?? "")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.green)
+                    
+                    // Item and price
+                    HStack {
+                        Text(manager.currentItem?.name ?? "")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text("£\(String(format: "%.0f", manager.currentItem?.price ?? 0))")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.yellow)
+                    }
+                    
+                    // Budget
+                    Text("You have £\(String(format: "%.0f", manager.currentBudget)) left")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.8))
+                    
+                    // Question
+                    Text("How much will you have after buying \(manager.currentItem?.name ?? "")?")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                    
+                    // Answer input
+                    TextField("", text: $manager.userAnswer)
+                        .keyboardType(.decimalPad)
+                        .padding()
+                        .background(Color.white.opacity(0.15))
+                        .cornerRadius(12)
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .font(.system(size: 18, weight: .semibold))
+                    
+                    // Wrong answer message
+                    if manager.isAnswerWrong {
+                        Text("That's not right — think again! 🤔")
+                            .font(.system(size: 13))
+                            .foregroundColor(.red)
+                    }
+                    
+                    // Submit button
+                    Button(action: {
+                        let _ = manager.checkAnswer()
+                    }) {
+                        Text("Submit Answer")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.white)
+                            .cornerRadius(14)
+                    }
+                }
+                .padding()
+                .background(Color.black.opacity(0.75))
+                .cornerRadius(16)
             }
         }
-        .padding()
-        .background(Color.black.opacity(0.75))
-        .cornerRadius(16)
     }
 
     // MARK: - Stage Complete View

@@ -148,6 +148,27 @@ class ARViewController: UIViewController, ARSCNViewDelegate {
         let config = ARWorldTrackingConfiguration()
         config.planeDetection = [.horizontal]
         sceneView.session.run(config)
+        
+        // Start update loop for section detection
+        Timer.scheduledTimer(
+            withTimeInterval: 0.3,
+            repeats: true
+        ) { [weak self] _ in
+            self?.updateSectionDetection()
+        }
+    }
+    
+    func updateSectionDetection() {
+        guard portalPlaced,
+              let manager = assessmentManager,
+              let pointOfView = sceneView.pointOfView else { return }
+        
+        let cameraTransform = pointOfView.transform
+        
+        manager.updateFacingSection(
+            cameraTransform: cameraTransform,
+            portalPosition: manager.portalAnchorPosition
+        )
     }
     
     func setupTapGesture() {
@@ -185,6 +206,7 @@ class ARViewController: UIViewController, ARSCNViewDelegate {
         
         sceneView.scene.rootNode.addChildNode(portal)
         onPortalPlaced?()
+        assessmentManager?.portalAnchorPosition = portal.position
         
         // Start assessment after portal is placed
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -230,6 +252,7 @@ struct ARViewContainer: UIViewControllerRepresentable {
 struct ARAssessmentView: View {
     var studentName: String
     var studentGrade: String
+    var onReset: () -> Void
     
     @StateObject private var assessmentManager = AssessmentManager()
     @State private var navigateToResults = false
@@ -276,7 +299,6 @@ struct ARAssessmentView: View {
                 
                 Spacer()
                 
-                // Show tap instruction BEFORE portal placed
                 if !portalPlaced {
                     Text("Point your camera at a flat surface and tap to enter the supermarket")
                         .font(.system(size: 15))
@@ -287,8 +309,6 @@ struct ARAssessmentView: View {
                         .cornerRadius(12)
                         .padding(.horizontal, 20)
                         .padding(.bottom, 30)
-                    
-                // Show assessment overlay AFTER portal placed
                 } else {
                     AssessmentOverlayView(
                         manager: assessmentManager,
@@ -302,16 +322,21 @@ struct ARAssessmentView: View {
             }
             
             // Navigate to results
-            NavigationLink(
-                destination: ResultView(
-                    manager: assessmentManager
-                ),
-                isActive: $navigateToResults
-            ) {
-                EmptyView()
+            if navigateToResults {
+                ResultView(
+                    studentName: studentName,
+                    studentGrade: studentGrade,
+                    finalScore: assessmentManager.finalScore,
+                    performanceLabel: assessmentManager.performanceLabel,
+                    milkAttempts: assessmentManager.milkAttempts,
+                    eggsAttempts: assessmentManager.eggsAttempts,
+                    breadAttempts: assessmentManager.breadAttempts,
+                    remainingBudget: assessmentManager.currentBudget,
+                    onReset: onReset
+                )
+                .transition(.move(edge: .bottom))
             }
         }
-        .navigationBarBackButtonHidden(false)
         .onAppear {
             assessmentManager.studentName = studentName
             assessmentManager.studentGrade = studentGrade
