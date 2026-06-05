@@ -5,6 +5,7 @@
 ![ARKit](https://img.shields.io/badge/ARKit-6.0-blue?style=flat-square&logo=apple)
 ![Platform](https://img.shields.io/badge/Platform-iOS%2017%2B-lightgrey?style=flat-square&logo=apple)
 ![License](https://img.shields.io/badge/License-GPL%20v3-green?style=flat-square)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20525546-blue?style=flat-square)](https://doi.org/10.5281/zenodo.20525546)
 
 ---
 
@@ -31,7 +32,9 @@ Examar is the practical implementation of the following research paper:
 **AR Assessments — Using Augmented Reality for Real-World Student Evaluations**
 Rohan Rakesh Katyayani — Independent Researcher, 2026
 
-*Submitted for publication — IEEE ICALT 2026*
+📄 **Published preprint (Zenodo):** [DOI: 10.5281/zenodo.20525546](https://doi.org/10.5281/zenodo.20525546)
+
+*Target venue: IEEE ICALT 2027*
 
 ---
 
@@ -41,6 +44,8 @@ Rohan Rakesh Katyayani — Independent Researcher, 2026
   with ARKit that places students inside a virtual supermarket
 - 🧮 **Scenario Based Assessment** — Students solve real-world math 
   problems within the AR environment
+- 🧭 **Section Detection** — Questions appear only when the student is 
+  facing the correct section, requiring independent navigation
 - ✅ **Instant Validation** — The system validates answers at each stage 
   and prompts students to retry if incorrect
 - 📊 **Result Screen** — Detailed performance summary on completion
@@ -55,10 +60,10 @@ Rohan Rakesh Katyayani — Independent Researcher, 2026
 
 | Technology | Purpose |
 |---|---|
-| Swift 5.9 | Primary programming language |
+| Swift | Primary programming language |
 | SwiftUI | User interface framework |
-| ARKit 6.0 | Augmented Reality engine |
-| RealityKit | 3D rendering and portal construction |
+| ARKit | Augmented Reality engine |
+| SceneKit | 3D rendering and portal construction |
 | Xcode 26 | Development environment |
 
 ---
@@ -89,39 +94,34 @@ git clone https://github.com/RohanKatyayani/Examar.git
 
 ---
 
-## Screenshots
-
-*Coming soon — app in active development*
-
----
-
 ## How it Works
 
 Student opens Examar
 ↓
 Enters name and grade
 ↓
-AR Portal opens via iPhone camera
+Points camera at flat surface → taps to place AR portal
 ↓
-Student navigates virtual supermarket
+Navigates the virtual supermarket independently
 ↓
-Answers math questions at each section
+Answers math questions at each section (Milk → Eggs → Bread)
 ↓
 System validates answers in real time
 ↓
-Result screen generated
+Result screen generated (score + per-item breakdown)
 ↓
 Teacher adds observation notes
 ↓
-Final combined assessment saved
+Final combined (hybrid) assessment saved
 
 ---
 
 ## Author
 
 **Rohan Rakesh Katyayani**
-Independent Researcher | AI Developer
-[GitHub](https://github.com/RohanKatyayani)
+Independent Researcher | AI Engineer
+🌐 [Portfolio](https://rohankatyayani.netlify.app/) · [GitHub](https://github.com/RohanKatyayani) · [LinkedIn](https://www.linkedin.com/in/rohan-katyayani/)
+🆔 ORCID: [0009-0007-8605-5465](https://orcid.org/0009-0007-8605-5465)
 
 ---
 
