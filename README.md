@@ -97,20 +97,28 @@ git clone https://github.com/RohanKatyayani/Examar.git
 ## How it Works
 
 Student opens Examar
+
 ↓
 Enters name and grade
+
 ↓
 Points camera at flat surface → taps to place AR portal
+
 ↓
 Navigates the virtual supermarket independently
+
 ↓
 Answers math questions at each section (Milk → Eggs → Bread)
+
 ↓
 System validates answers in real time
+
 ↓
 Result screen generated (score + per-item breakdown)
+
 ↓
 Teacher adds observation notes
+
 ↓
 Final combined (hybrid) assessment saved
 
